@@ -12,6 +12,7 @@ find_package(CUDA REQUIRED)
 # Set the C++ standard
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(${CMAKE_CXX_FLAGS} "-diag-suppress 611-D")
 
 # # Include directories
 include_directories(
@@ -21,6 +22,15 @@ include_directories(
 
 # Find OpenCV package
 find_package(OpenCV REQUIRED)
+
+# fetch latest argparse
+include(FetchContent)
+FetchContent_Declare(
+    argparse
+    GIT_REPOSITORY https://github.com/p-ranav/argparse.git
+)
+FetchContent_MakeAvailable(argparse)
+
 
 # Include OpenCV headers
 include_directories(${OpenCV_INCLUDE_DIRS})
@@ -32,6 +42,12 @@ file(GLOB CPU_SOURCES ${PROJECT_SOURCE_DIR}/src/cpu/*.cpp)
 
 # Create executable
 cuda_add_executable(CudaProgramming ${CUDA_SOURCES} ${CPP_SOURCES} ${CPU_SOURCES})
+
+# cuda_add_library(cuda_kernels ${CUDA_SOURCES})
+# add_executable(CudaProgramming ${CPP_SOURCES} ${CUDA_SOURCES} ${CPU_SOURCES})
+
+target_link_libraries(CudaProgramming ${OpenCV_LIBS})
+#  cuda_kernels ${CUDA_LIBRARIES})
 
 # Specify include directories for the target
 # target_include_directories(MyProject PRIVATE
@@ -63,6 +79,3 @@ add_custom_target(fresh_build
     DEPENDS clean_build
 )
 
-# Link libraries if necessary
-# target_link_libraries(MyProject some_library)
-target_link_libraries(CudaProgramming ${OpenCV_LIBS})
