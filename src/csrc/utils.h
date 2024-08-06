@@ -16,6 +16,18 @@ inline bool compare_matrices(const float* mat1, const float* mat2, int rows, int
 }
 }
 
+namespace utils{
+// Function to compare two matrices
+inline bool compare_vectors(const float* vec1, const float* vec2, int size, float epsilon = 1e-4) {
+    for (int i = 0; i < size; ++i) {
+        if (std::abs(vec1[i] - vec2[i]) > epsilon) {
+            return false;
+        }
+    }
+    return true;
+}
+}
+
 namespace imageio {
 inline cv::Mat readImage(std::string image_path) {
     cv::Mat image = cv::imread(image_path, cv::IMREAD_COLOR);

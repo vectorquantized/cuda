@@ -5,7 +5,7 @@
 #include <string>
 #include <iostream>
 
-#define TIME_FUNCTION() timers::FunctionTimer timer(__FUNCTION__)
+#define TIMED_CPU_FUNCTION() timers::FunctionTimer timer(__FUNCTION__)
 
 namespace timers {
 class FunctionTimer {
@@ -16,7 +16,7 @@ public:
     ~FunctionTimer() {
         auto end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start_).count();
-        std::cout << "Time taken to run the function " << function_name_ << " : " << duration << " ms" <<std::endl;
+        std::cout << "CPU function " << function_name_ << " finished in " << duration << " ms" <<std::endl;
     }
 
 private:
