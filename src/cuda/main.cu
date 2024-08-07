@@ -13,6 +13,9 @@ std::unordered_map<std::string, std::function<void(void)>> function_map =  {
     {
         "matmul", []() { entry::matmul_invocation(); }
     },
+    {
+        "conv2d", []() { entry::conv2d_kernel_invocation(); }
+    },
 };
 
 
@@ -22,7 +25,7 @@ std::unordered_map<std::string, std::function<void(void)>> function_map =  {
 // More benchmarking will be added, but for now, I focus on learning.
 int main(int argc, char* argv[]) {
     
-    std::vector<std::string> kernel_implementations = {"conv1d", "matmul"};
+    std::vector<std::string> kernel_implementations = {"conv1d", "matmul", "conv2d"};
 
     cxxopts::Options options("CudaProgramming", "CLI for running cuda kernels based on learning from PMPP book.");
     options.add_options()

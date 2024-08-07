@@ -32,6 +32,26 @@ __global__ void conv1d(float* matrix, float* conv_mask, float* output, int mask_
     output[idx] = p_value;
 }
 
+__global__ void conv2d(float* matrix, float* conv_mask, float* output, int r, int width, int height) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+    float p_value = 0.0f;
+    if (row < height && col < width) {
+        for(int i = 0; i< 2 * r + 1; ++i) {
+            for (int j = 0; j < 2 * r + 1; ++j) {
+                int in_row = row - r + i;
+                int in_col = col - r + j; 
+                if (in_row >= 0 && in_row < height &&
+                    in_col >= 0 && in_col < width) {
+                        p_value += matrix[in_row * width + in_col] * conv_mask[i * (2 * r + 1) + j];
+                    }
+            }
+        }
+        output[row * width + col] = p_value;
+    }
+}
+
 __global__ void rgbToGrayScale(float *in, float *out, int width, int height) {
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -57,4 +77,3 @@ __global__ void matmul_cuda(float* a, float* b, float* c, int M, int K, int N) {
         c[row * N + col] = value;
     }
 }
-

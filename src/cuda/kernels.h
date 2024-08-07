@@ -9,5 +9,6 @@ __global__ void rgbToGrayScale(float *in, float *out, int width, int height);
 __global__ void saxpy_grid_strided(float a, float* b, float* c, int N);
 __global__ void saxpy(float a, float* b, float* c, int N);
 __global__ void conv1d(float* matrix, float* conv_mask, float* output, int mask_width, int width);
+__global__ void conv2d(float* matrix, float* conv_mask, float* output, int r, int width, int height);
 
 #endif //KERNELS_H

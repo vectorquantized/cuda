@@ -37,6 +37,64 @@ void matmul_kernel(float* mat1_d, float* mat2_d, float* out_d, int M, int K, int
     cudaDeviceSynchronize();
 }
 
+void conv2d_kernel(float* matrix_d, float* conv_mask_d, float* output_d, 
+                  int r, int width, int height) {
+    TIMED_CUDA_FUNCTION();
+    int block_size_x = 16;
+    int block_size_y = 16;
+    int block_dim_x = width + (block_size_x - 1)/block_size_x;
+    int block_dim_y = height + (block_size_y - 1)/block_size_y;
+    dim3 threads_per_block(block_size_x, block_size_y, 1);
+    dim3 blocks_per_grid(block_dim_x, block_dim_y, 1);
+
+    conv2d<<<blocks_per_grid, threads_per_block>>>(matrix_d, conv_mask_d, output_d, r, width, height);
+    cudaDeviceSynchronize();
+
+}
+
+void conv2d_kernel_invocation() {
+    int M = 512;
+    int N = 512;
+    int k = 5;
+    int r = (k - 1) / 2;
+
+    std::vector<float> matrix(M * N);
+    random_init(matrix.data(), matrix.size());
+    std::vector<float> conv_mask(k * k);
+    random_init(conv_mask.data(), conv_mask.size());
+    std::vector<float> cpu_output(M * N, 0.0f);
+    
+    conv2d_cpu(matrix, conv_mask, cpu_output, r, M, N);
+
+    float *matrix_d, *conv_mask_d, *output_d;
+    int matrix_bytes = sizeof(float) * M * N;
+    int mask_bytes = sizeof(float) * k * k;
+    float *output_h = new float[M * N];
+
+    CUDA_ERROR_CHECK(cudaMalloc((void**) &matrix_d, matrix_bytes));
+    CUDA_ERROR_CHECK(cudaMalloc((void**) &conv_mask_d, mask_bytes));
+    CUDA_ERROR_CHECK(cudaMalloc((void**) &output_d, matrix_bytes));
+
+    CUDA_ERROR_CHECK(cudaMemcpy(matrix_d, matrix.data(), matrix_bytes, cudaMemcpyHostToDevice));
+    CUDA_ERROR_CHECK(cudaMemcpy(conv_mask_d, conv_mask.data(), mask_bytes, cudaMemcpyHostToDevice));
+
+
+    conv2d_kernel(matrix_d, conv_mask_d, output_d, r, M, N);
+
+    CUDA_ERROR_CHECK(cudaMemcpy(output_h, output_d, matrix_bytes, cudaMemcpyDeviceToHost));
+
+    if (matrix::compare_matrices(output_h, cpu_output.data(), M, N)) {
+        std::cout << "The CUDA kernel's result matches the CPU result." << std::endl;
+    } else {
+        std::cerr << "The CUDA kernel's result does NOT match the CPU result." << std::endl;
+    }
+
+    delete[] output_h;
+    cudaFree(matrix_d);
+    cudaFree(conv_mask_d);
+    cudaFree(output_d);
+}
+
 void conv1d_kernel_invocation() {
     int N = 1 << 20;
     std::vector<float> matrix_h(N);
