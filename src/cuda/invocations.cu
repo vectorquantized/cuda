@@ -33,7 +33,7 @@ void matmul_kernel(float* mat1_d, float* mat2_d, float* out_d, int M, int K, int
     dim3 blocks_per_grid((N + block_size_x - 1) / block_size_x, 
                          (M + block_size_y - 1) / block_size_y);
 
-    matmul_cuda<<<blocks_per_grid, threads_per_block>>>(mat1_d, mat2_d, out_d, M, K, N);
+    matmul_cuda_tiled<<<blocks_per_grid, threads_per_block>>>(mat1_d, mat2_d, out_d, M, K, N);
     cudaDeviceSynchronize();
 }
 
@@ -136,9 +136,9 @@ void conv1d_kernel_invocation() {
 
 void matmul_invocation() {
 
-    int M = 1024;
+    int M = 2048;
     int K = 1024;
-    int N = 1024;
+    int N = 2048;
     Matrix mat1_h(M, K, random_init);
     Matrix mat2_h(K, N, random_init);
     float* out_h = new float[M * N];
