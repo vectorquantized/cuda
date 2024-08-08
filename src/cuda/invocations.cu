@@ -3,11 +3,20 @@
 #include <cuda_runtime.h>
 #include <iomanip>
 #include <cublas_v2.h>
+#include "invocations.h"
 #include "kernels.h"
 #include "csrc/matrix.h"
 #include "csrc/init_utils.h"
 #include "cpu/cpu_kernels.h"
 #include "csrc/utils.h"
+
+#define CHANNELS 3
+#define TILE_WIDTH 16
+#define FILTER_RADIUS 2
+#define IN_TILE_WIDTH 16
+#define OUT_TILE_WIDTH ((IN_TILE_WIDTH) - (2 * FILTER_RADIUS))
+
+// __constant__ float Conv_Mask_C[2 * FILTER_RADIUS + 1][2 * FILTER_RADIUS + 1];
 
 namespace entry {
 
@@ -37,8 +46,7 @@ void matmul_kernel(float* mat1_d, float* mat2_d, float* out_d, int M, int K, int
     cudaDeviceSynchronize();
 }
 
-void conv2d_kernel(float* matrix_d, float* conv_mask_d, float* output_d, 
-                  int r, int width, int height) {
+void conv2d_kernel(float* matrix_d, float* conv_mask_d, float* output_d, int width, int height) {
     TIMED_CUDA_FUNCTION();
     int block_size_x = 16;
     int block_size_y = 16;
@@ -47,7 +55,7 @@ void conv2d_kernel(float* matrix_d, float* conv_mask_d, float* output_d,
     dim3 threads_per_block(block_size_x, block_size_y, 1);
     dim3 blocks_per_grid(block_dim_x, block_dim_y, 1);
 
-    conv2d<<<blocks_per_grid, threads_per_block>>>(matrix_d, conv_mask_d, output_d, r, width, height);
+    conv2d_tiled<<<blocks_per_grid, threads_per_block>>>(matrix_d, conv_mask_d, output_d, width, height);
     cudaDeviceSynchronize();
 
 }
@@ -55,8 +63,8 @@ void conv2d_kernel(float* matrix_d, float* conv_mask_d, float* output_d,
 void conv2d_kernel_invocation() {
     int M = 512;
     int N = 512;
-    int k = 5;
-    int r = (k - 1) / 2;
+    int k = 2 * FILTER_RADIUS + 1;
+    int r = FILTER_RADIUS;
 
     std::vector<float> matrix(M * N);
     random_init(matrix.data(), matrix.size());
@@ -77,9 +85,10 @@ void conv2d_kernel_invocation() {
 
     CUDA_ERROR_CHECK(cudaMemcpy(matrix_d, matrix.data(), matrix_bytes, cudaMemcpyHostToDevice));
     CUDA_ERROR_CHECK(cudaMemcpy(conv_mask_d, conv_mask.data(), mask_bytes, cudaMemcpyHostToDevice));
+    // CUDA_ERROR_CHECK(cudaMemcpyToSymbol(Conv_Mask_C, conv_mask.data(), sizeof(conv_mask.data())));
 
 
-    conv2d_kernel(matrix_d, conv_mask_d, output_d, r, M, N);
+    conv2d_kernel(matrix_d, conv_mask_d, output_d, M, N);
 
     CUDA_ERROR_CHECK(cudaMemcpy(output_h, output_d, matrix_bytes, cudaMemcpyDeviceToHost));
 
