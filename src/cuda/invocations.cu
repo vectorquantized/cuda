@@ -2,21 +2,15 @@
 #include <iostream>
 #include <cuda_runtime.h>
 #include <iomanip>
-#include <cublas_v2.h>
+#include "csrc/utils.h"
 #include "invocations.h"
-#include "kernels.h"
 #include "csrc/matrix.h"
 #include "csrc/init_utils.h"
 #include "cpu/cpu_kernels.h"
-#include "csrc/utils.h"
+#include "kernels.h"
 
-#define CHANNELS 3
-#define TILE_WIDTH 16
-#define FILTER_RADIUS 2
-#define IN_TILE_WIDTH 16
-#define OUT_TILE_WIDTH ((IN_TILE_WIDTH) - (2 * FILTER_RADIUS))
+__constant__ float Conv_Mask_C[FILTER_SIZE * FILTER_SIZE];
 
-// __constant__ float Conv_Mask_C[2 * FILTER_RADIUS + 1][2 * FILTER_RADIUS + 1];
 
 namespace entry {
 
@@ -46,24 +40,59 @@ void matmul_kernel(float* mat1_d, float* mat2_d, float* out_d, int M, int K, int
     cudaDeviceSynchronize();
 }
 
-void conv2d_kernel(float* matrix_d, float* conv_mask_d, float* output_d, int width, int height) {
+__global__ void conv2d_tiled(float* matrix, float* output, int width, int height) {
+
+    int row_output = blockIdx.y * OUT_TILE_WIDTH + threadIdx.y;
+    int col_output = blockIdx.x * OUT_TILE_WIDTH + threadIdx.x;
+
+    int row_input = row_output - FILTER_RADIUS;
+    int col_input = col_output - FILTER_RADIUS;
+
+    int shared_row = threadIdx.y;
+    int shared_col = threadIdx.x;
+
+    __shared__ float matrix_shared[IN_TILE_WIDTH][IN_TILE_WIDTH];
+
+    if (row_input >= 0 && row_input < height && col_input >= 0 && col_input < width) {
+        matrix_shared[shared_row][shared_col] = matrix[row_input * width + col_input];
+    } else {
+        matrix_shared[shared_row][shared_col] = 0.0f;
+    }
+    __syncthreads();
+   
+    if (shared_col < OUT_TILE_WIDTH && shared_row < OUT_TILE_WIDTH) {
+        float p_value = 0.0f;
+        for(int i = 0 ; i < FILTER_SIZE; ++i) {
+            for(int j = 0; j < FILTER_SIZE; ++j) {
+                p_value += Conv_Mask_C[i * FILTER_SIZE + j] * matrix_shared[shared_row + i][shared_col + j];
+            }
+        }
+  
+        if (row_output < height && col_output < width) {
+            output[row_output * width + col_output] = p_value;
+        }
+    }
+}
+
+
+void conv2d_kernel(float* matrix_d, float* output_d, int width, int height) {
     TIMED_CUDA_FUNCTION();
-    int block_size_x = 16;
-    int block_size_y = 16;
-    int block_dim_x = width + (block_size_x - 1)/block_size_x;
-    int block_dim_y = height + (block_size_y - 1)/block_size_y;
+    int block_size_x = IN_TILE_WIDTH;
+    int block_size_y = IN_TILE_WIDTH;
+    int block_dim_x = (width + OUT_TILE_WIDTH - 1)/OUT_TILE_WIDTH;
+    int block_dim_y = (height + OUT_TILE_WIDTH - 1)/OUT_TILE_WIDTH;
     dim3 threads_per_block(block_size_x, block_size_y, 1);
     dim3 blocks_per_grid(block_dim_x, block_dim_y, 1);
 
-    conv2d_tiled<<<blocks_per_grid, threads_per_block>>>(matrix_d, conv_mask_d, output_d, width, height);
-    cudaDeviceSynchronize();
+    conv2d_tiled<<<blocks_per_grid, threads_per_block>>>(matrix_d, output_d, width, height);
+    CUDA_ERROR_CHECK(cudaDeviceSynchronize());
 
 }
 
 void conv2d_kernel_invocation() {
-    int M = 512;
-    int N = 512;
-    int k = 2 * FILTER_RADIUS + 1;
+    int M = 384;
+    int N = 384;
+    int k = FILTER_SIZE;
     int r = FILTER_RADIUS;
 
     std::vector<float> matrix(M * N);
@@ -80,15 +109,21 @@ void conv2d_kernel_invocation() {
     float *output_h = new float[M * N];
 
     CUDA_ERROR_CHECK(cudaMalloc((void**) &matrix_d, matrix_bytes));
-    CUDA_ERROR_CHECK(cudaMalloc((void**) &conv_mask_d, mask_bytes));
+    // CUDA_ERROR_CHECK(cudaMalloc((void**) &conv_mask_d, mask_bytes));
     CUDA_ERROR_CHECK(cudaMalloc((void**) &output_d, matrix_bytes));
 
     CUDA_ERROR_CHECK(cudaMemcpy(matrix_d, matrix.data(), matrix_bytes, cudaMemcpyHostToDevice));
-    CUDA_ERROR_CHECK(cudaMemcpy(conv_mask_d, conv_mask.data(), mask_bytes, cudaMemcpyHostToDevice));
-    // CUDA_ERROR_CHECK(cudaMemcpyToSymbol(Conv_Mask_C, conv_mask.data(), sizeof(conv_mask.data())));
+    // CUDA_ERROR_CHECK(cudaMemcpy(conv_mask_d, conv_mask.data(), mask_bytes, cudaMemcpyHostToDevice));
+    CUDA_ERROR_CHECK(cudaMemcpyToSymbol(Conv_Mask_C, conv_mask.data(), mask_bytes));
 
 
-    conv2d_kernel(matrix_d, conv_mask_d, output_d, M, N);
+    float hostConvMask[FILTER_SIZE * FILTER_SIZE];
+    cudaMemcpyFromSymbol(hostConvMask, Conv_Mask_C, mask_bytes);
+
+    bool is_mask_same = matrix::compare_matrices(hostConvMask, conv_mask.data(), k, k);
+    std::cout << "is_mask_same: " << is_mask_same << std::endl;
+    
+    conv2d_kernel(matrix_d, output_d, M, N);
 
     CUDA_ERROR_CHECK(cudaMemcpy(output_h, output_d, matrix_bytes, cudaMemcpyDeviceToHost));
 
@@ -100,7 +135,7 @@ void conv2d_kernel_invocation() {
 
     delete[] output_h;
     cudaFree(matrix_d);
-    cudaFree(conv_mask_d);
+    // cudaFree(conv_mask_d);
     cudaFree(output_d);
 }
 

@@ -1,6 +1,6 @@
 #include <iostream>
 #include <iomanip>
-#include "cuda/invocations.h"
+#include "invocations.h"
 #include <cxxopts.hpp>
 #include <unordered_map>
 #include <functional>
@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 
     cxxopts::Options options("CudaProgramming", "CLI for running cuda kernels based on learning from PMPP book.");
     options.add_options()
-        ("n, name", "Kernel name", cxxopts::value<std::string>()->default_value("conv1d"), "NAME")
+        ("n, name", "Kernel name", cxxopts::value<std::string>()->default_value("conv2d"), "NAME")
         ("h, help", "Print usage");
     
     auto result = options.parse(argc, argv);
