@@ -47,23 +47,29 @@ __global__ void conv2d_tiled(const float* __restrict__ matrix, float* output, in
 
     __shared__ float m_shared[IN_TILE_WIDTH][IN_TILE_WIDTH];
 
+    // index into shared memory.
     int row_shared = threadIdx.y;
     int col_shared = threadIdx.x;
 
+    // only copy valid regions from HBM.
     if (row_in >= 0 && row_in < height &&
         col_in >= 0  && col_in < width) {
             m_shared[row_shared][col_shared] = matrix[row_in * width + col_in];
-        } else {
+        } else { // Halo elements
             m_shared[row_shared][col_shared] = 0.0f;
         }
     
     __syncthreads();
 
+    // Convolve only if current thread index is within the bounds of output.
     if(row_shared < OUT_TILE_WIDTH && col_shared < OUT_TILE_WIDTH) {
         float p_value = 0.0f;
         for(int i = 0; i < FILTER_SIZE; ++i) {
             for(int j = 0; j < FILTER_SIZE; ++j) {
-                p_value += Conv_Mask_C[i * FILTER_SIZE + j] * m_shared[row_shared+ i][col_shared + j];
+                // IN_TILE_WIDTH = OUT_TILE_WIDTH + FILTER_SIZE
+                // m_shared is padded, the values of threadIdx and blockIdx that resulted in
+                // row_in and col_in to fall out of bounds will have 0.0f stored in m_shared.
+                p_value += Conv_Mask_C[i * FILTER_SIZE + j] * m_shared[row_shared + i][col_shared + j];
             }
         }
         if (row_out < height && col_out < width) {
@@ -77,8 +83,10 @@ __global__ void conv2d_tiled(const float* __restrict__ matrix, float* output, in
 namespace conv2d_kernels {
 void launch_kernel(float* matrix_d, float* output_d, int width, int height) {
     TIMED_CUDA_FUNCTION();
+    // need IN_TILE_WIDTH threads to index into the shared memory.
     int block_size_x = IN_TILE_WIDTH;
     int block_size_y = IN_TILE_WIDTH;
+    // num blocks in a grid will depend on the size of OUT_TILE_WIDTH
     int block_dim_x = (width + OUT_TILE_WIDTH - 1)/OUT_TILE_WIDTH;
     int block_dim_y = (height + OUT_TILE_WIDTH - 1)/OUT_TILE_WIDTH;
     dim3 threads_per_block(block_size_x, block_size_y, 1);
