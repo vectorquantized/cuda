@@ -1,20 +1,20 @@
 #include <iostream>
 #include <iomanip>
-#include "invocations.h"
+#include "kernels.h"
 #include <cxxopts.hpp>
 #include <unordered_map>
 #include <functional>
 
 // For simplicity we'll create a str -> function map and invoke the function.
 std::unordered_map<std::string, std::function<void(void)>> function_map =  {
+    // {
+    //     "conv1d", []() { entry::conv1d_kernel_invocation(); }
+    // },
+    // {
+    //     "matmul", []() { entry::matmul_invocation(); }
+    // },
     {
-        "conv1d", []() { entry::conv1d_kernel_invocation(); }
-    },
-    {
-        "matmul", []() { entry::matmul_invocation(); }
-    },
-    {
-        "conv2d", []() { entry::conv2d_kernel_invocation(); }
+        "conv2d", []() { conv2d_kernels::launch(); }
     },
 };
 

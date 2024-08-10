@@ -1,11 +1,11 @@
 
-#ifndef INVOCATIONS_H
-#define INVOCATIONS_H
+// #ifndef INVOCATIONS_H
+// #define INVOCATIONS_H
 
-namespace entry {
-    void conv1d_kernel_invocation();
-    void matmul_invocation();
-    void conv2d_kernel_invocation();
-}
+// namespace entry {
+//     void conv1d_kernel_invocation();
+//     void matmul_invocation();
+//     void conv2d_kernel_invocation();
+// }
 
-#endif // INVOCATIONS_H
+// #endif // INVOCATIONS_H
