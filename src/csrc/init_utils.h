@@ -3,7 +3,7 @@
 
 #include <random>
 
-void random_init(float *array, int size) {
+inline void random_init(float *array, int size) {
     std::random_device rd;
     std::mt19937 gen(rd());
 

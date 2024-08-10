@@ -81,7 +81,7 @@ __global__ void conv2d_tiled(const float* __restrict__ matrix, float* output, in
 }
 
 namespace conv2d_kernels {
-void launch_kernel(float* matrix_d, float* output_d, int width, int height) {
+void conv2d_kernel_launch(float* matrix_d, float* output_d, int width, int height) {
     TIMED_CUDA_FUNCTION();
     // need IN_TILE_WIDTH threads to index into the shared memory.
     int block_size_x = IN_TILE_WIDTH;
@@ -131,14 +131,14 @@ void launch() {
     bool is_mask_same = matrix::compare_matrices(hostConvMask, conv_mask.data(), k, k);
     std::cout << "is_mask_same: " << is_mask_same << std::endl;
     
-    launch_kernel(matrix_d, output_d, M, N);
+    conv2d_kernel_launch(matrix_d, output_d, M, N);
 
     CUDA_ERROR_CHECK(cudaMemcpy(output_h, output_d, matrix_bytes, cudaMemcpyDeviceToHost));
 
     if (matrix::compare_matrices(output_h, cpu_output.data(), M, N)) {
-        std::cout << "The CUDA kernel's result matches the CPU result." << std::endl;
+        std::cout << "CUDA kernel's result matches the CPU result." << std::endl;
     } else {
-        std::cerr << "The CUDA kernel's result does NOT match the CPU result." << std::endl;
+        std::cerr << "CUDA kernel's result does NOT match the CPU result." << std::endl;
     }
 
     delete[] output_h;

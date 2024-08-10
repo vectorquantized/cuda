@@ -7,9 +7,8 @@
 
 #include <cuda_runtime.h>
 #include "kernels/convolutions.h"
+#include "kernels/gemm.h"
 
-__global__ void matmul_cuda(float* a, float* b, float* c, int M, int K, int N);
-__global__ void matmul_cuda_tiled(const float* __restrict__  A, const float* __restrict__ B, float* C, int M, int K, int N);
 __global__ void rgbToGrayScale(float *in, float *out, int width, int height);
 __global__ void saxpy_grid_strided(float a, float* b, float* c, int N);
 __global__ void saxpy(float a, float* b, float* c, int N);
