@@ -1,6 +1,3 @@
-#ifndef _KERNELS_IMPL
-#define _KERNELS_IMPL
-
 #include "kernels.h"
 
 __global__ void saxpy_grid_strided(float a, float* b, float* c, int N) {
@@ -43,60 +40,3 @@ __global__ void rgbToGrayScale(float *in, float *out, int width, int height) {
         out[gray_offset] = 0.21f * r + 0.71f * g + 0.07f * b;
     }
 }
-
-__global__ void matmul_cuda(float* a, float* b, float* c, int M, int K, int N) {
-    int row = blockIdx.y * blockDim.y + threadIdx.y;
-    int col = blockIdx.x * blockDim.x + threadIdx.x;
-
-    if (row < M && col < N) {
-        float value = 0.0f;
-        for (int k = 0; k < K; ++k) {
-            value += a[row * K + k] * b[k * N + col];
-        }
-        c[row * N + col] = value;
-    }
-}
-
-__global__ void matmul_cuda_tiled(const float* __restrict__ A, const float* __restrict__ B, float* C, int M, int K, int N) {
-
-    __shared__ float a_shared[TILE_WIDTH][TILE_WIDTH];
-    __shared__ float b_shared[TILE_WIDTH][TILE_WIDTH];
-
-    int bx = blockIdx.x;
-    int by = blockIdx.y;
-    int tx = threadIdx.x;
-    int ty = threadIdx.y;
-
-    int row = by * TILE_WIDTH + ty;
-    int col = bx * TILE_WIDTH + tx;
-
-    float p_value = 0.0f;
-    
-    for (int i = 0; i < (K + TILE_WIDTH - 1) / TILE_WIDTH ; ++i) {
-        if (row < M && i * TILE_WIDTH + tx < K) {
-            a_shared[ty][tx] = A[row * K + i * TILE_WIDTH + tx];
-        } else {
-            a_shared[ty][tx] = 0.0f;
-        }
-        if (col < N && i * TILE_WIDTH + ty < K) {
-            b_shared[ty][tx] = B[(i * TILE_WIDTH + ty) * N + col];
-        } else {
-            b_shared[ty][tx] = 0.0f;
-        }
-        __syncthreads();
-
-        for (int j = 0; j < TILE_WIDTH; ++ j) {
-            p_value += a_shared[ty][j] * b_shared[j][tx];
-        }
-
-        __syncthreads();
-    }
-
-    if (row < M && col < N) {
-        C[row * N + col] = p_value;
-    }
-
-}
-
-
-#endif // _KERNELS_IMPL
