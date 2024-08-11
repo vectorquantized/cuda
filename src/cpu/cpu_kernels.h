@@ -10,5 +10,7 @@ void conv1d_cpu(const std::vector<float>& matrix, const std::vector<float>& conv
 void conv2d_cpu(const std::vector<float>& matrix, const std::vector<float>& conv_mask, 
                 std::vector<float>& output, int r, int width, int height);
 
+void softmax_cpu(float* mat, int M, int N);
+
 
 #endif // CPU_KERNELS_H

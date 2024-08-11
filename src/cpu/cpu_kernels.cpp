@@ -53,5 +53,35 @@ void conv2d_cpu(const std::vector<float>& matrix, const std::vector<float>& conv
         output[row * width + col] = p_value;
         }
     }
+}
 
+#include <vector>
+#include <cmath>
+#include <algorithm>
+
+// Function to apply softmax to a 2D matrix stored in a flat array in row-major order
+void softmax_cpu(float* mat, int M, int N) {
+    for (int row = 0; row < M; ++row) {
+        float max_val = -1e20f;
+        float sum = 0.0f;
+
+        // Step 1: Find the maximum value for numerical stability
+        for (int col = 0; col < N; ++col) {
+            float value = mat[row * N + col];
+            if (value > max_val) {
+                max_val = value;
+            }
+        }
+
+        // Step 2: Compute exponentials and their sum
+        for (int col = 0; col < N; ++col) {
+            mat[row * N + col] = std::exp(mat[row * N + col] - max_val);
+            sum += mat[row * N + col];
+        }
+
+        // Step 3: Normalize the values
+        for (int col = 0; col < N; ++col) {
+            mat[row * N + col] /= sum;
+        }
+    }
 }

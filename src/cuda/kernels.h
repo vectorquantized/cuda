@@ -8,6 +8,7 @@
 #include <cuda_runtime.h>
 #include "kernels/convolutions.h"
 #include "kernels/gemm.h"
+#include "kernels/softmax.h"
 
 __global__ void rgbToGrayScale(float *in, float *out, int width, int height);
 __global__ void saxpy_grid_strided(float a, float* b, float* c, int N);
