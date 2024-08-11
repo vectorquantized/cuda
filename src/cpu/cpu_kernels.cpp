@@ -61,6 +61,7 @@ void conv2d_cpu(const std::vector<float>& matrix, const std::vector<float>& conv
 
 // Function to apply softmax to a 2D matrix stored in a flat array in row-major order
 void softmax_cpu(float* mat, int M, int N) {
+    TIMED_CPU_FUNCTION();
     for (int row = 0; row < M; ++row) {
         float max_val = -1e20f;
         float sum = 0.0f;

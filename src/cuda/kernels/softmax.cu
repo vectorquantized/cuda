@@ -32,6 +32,7 @@ __global__ void softmax(float* matrix, int M, int N) {
 
 
 void softmax_kernel_launch(float* matrix, int M, int N) {
+    TIMED_CUDA_FUNCTION();
     dim3 threads_per_block(1, 256);
     dim3 blocks_per_grid(1, M);
     softmax<<<blocks_per_grid, threads_per_block>>>(matrix, M, N);
@@ -41,8 +42,8 @@ void softmax_kernel_launch(float* matrix, int M, int N) {
 namespace softmax_kernels {
 void launch() {
 
-    int M = 256;
-    int N = 256;
+    int M = 8192;
+    int N = 4096;
     int size_bytes = sizeof(float) * M * N;
     Matrix mat_h(M, N, random_init);
     Matrix mat_cpu(mat_h);
