@@ -49,12 +49,6 @@ cuda_add_executable(CudaProgramming ${CUDA_SOURCES} ${CPP_SOURCES} ${CPU_SOURCES
 target_link_libraries(CudaProgramming ${OpenCV_LIBS})
 #  cuda_kernels ${CUDA_LIBRARIES})
 
-# Specify include directories for the target
-# target_include_directories(MyProject PRIVATE
-#     ${PROJECT_SOURCE_DIR}/src/cuda
-#     ${PROJECT_SOURCE_DIR}/src/csrc
-#     ${PROJECT_SOURCE_DIR}/src/cpu
-# )
 
 # Custom clean target
 add_custom_target(clean_build
