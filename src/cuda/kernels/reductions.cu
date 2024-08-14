@@ -8,10 +8,12 @@
 
 __global__ void add(float* input, float* output, int size) {
 
+    // size of shared memory will be passed in as kernel launch param.
     extern __shared__ float s_data[];
     unsigned int t_idx = threadIdx.x;
     unsigned int g_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
+    // bounds check
     if (g_idx < size) {
         s_data[t_idx] = input[g_idx];
     } else {
@@ -19,6 +21,14 @@ __global__ void add(float* input, float* output, int size) {
     }
     __syncthreads(); // barrier sync, we wait for all the data to be loaded in the SMEM.
 
+    // this way of using strides has less thread divergence on average.
+    // in the first timestep, we add thread 0 with thread blockDim.x / 2
+    // Imagine number of threads in a block are 256, half of these threads are
+    // inactive. Assuming warp size of 32, within a warp no thread divergence
+    // will happen as all threads in the warp take same execution path.
+    // Having said that, the moment stride value falls below the warp size we
+    // start seeing divergence. To tackle that we could add a separate version
+    // of the reduction kernel that is warp schedule aware.
     for (int stride = blockDim.x / 2; stride > 0; stride /= 2) {
         if (t_idx < stride) {
             s_data[t_idx] += s_data[t_idx + stride];
@@ -65,6 +75,9 @@ void launch(std::string name) {
     CUDA_ERROR_CHECK(cudaMemcpy(output_h, output_d, sizeof(float) * blocks_per_grid, cudaMemcpyDeviceToHost));
 
     std::cout.precision(10);
+    // TODO: Investigate why the cpu_sum and gpu_sum are different.
+    // perhaps this is due to FP ops, this can be verified by templatizing this
+    // kernel and using the int version.
     float cpu_sum = std::accumulate(input_vec.begin(), input_vec.end(), 0.0f);
     std::cout << "cpu: " << cpu_sum << std::endl;
     float gpu_sum = std::accumulate(output_h, output_h + blocks_per_grid, 0.0f);
