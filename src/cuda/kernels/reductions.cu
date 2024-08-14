@@ -34,25 +34,24 @@ bool close(float a, float b, float rtol = 1e-5, float atol = 1e-8) {
     return std::fabs(a - b) <= (atol + rtol * std::fabs(b));
 }
 
+
 namespace reduction_kernels {
+
+void add_kernel_launch(float* input, float* output, int size, int threads_per_block, int blocks_per_grid) {
+    TIMED_CUDA_FUNCTION();
+    int shared_memory_size = threads_per_block * sizeof(float);
+    add<<<blocks_per_grid, threads_per_block, shared_memory_size>>>(input, output, size);
+    cudaDeviceSynchronize();
+}
+
 void launch(std::string name) {
-    int M = 2048;
+    int M = 8192;
     int threads_per_block = 256;
     int blocks_per_grid = (M + (threads_per_block - 1)) / threads_per_block;
     float* output_h = new float[blocks_per_grid]();
-    
-    // for(int i=0; i<blocks_per_grid; ++i) {
-    //     std::cout << output_h[i] << " ";
-    // }
-    std::cout << std::endl;
     std::vector<float> input_vec(M);
 
     random_init(input_vec.data(), M);
-
-    // for(int i=0; i<input_vec.size(); ++i) {
-    //     std::cout << input_vec[i] << " ";
-    // }
-    std::cout << std::endl;
 
     float *input_d, *output_d;
 
@@ -61,12 +60,8 @@ void launch(std::string name) {
 
     CUDA_ERROR_CHECK(cudaMemcpy(input_d, input_vec.data(), sizeof(float) * M, cudaMemcpyHostToDevice));
 
-   
+    add_kernel_launch(input_d, output_d, M, threads_per_block, blocks_per_grid);
     
-    int shared_memory_size = threads_per_block * sizeof(float);
-    add<<<blocks_per_grid, threads_per_block, shared_memory_size>>>(input_d, output_d, M);
-
-
     CUDA_ERROR_CHECK(cudaMemcpy(output_h, output_d, sizeof(float) * blocks_per_grid, cudaMemcpyDeviceToHost));
 
     std::cout.precision(10);
@@ -75,8 +70,6 @@ void launch(std::string name) {
     float gpu_sum = std::accumulate(output_h, output_h + blocks_per_grid, 0.0f);
     std::cout << "gpu: " << gpu_sum << std::endl;
     std::cout << "diff: " << fabs(cpu_sum - gpu_sum) << std::endl;
-    // Tolerance for floating-point comparison
-    const float epsilon = 1e-4;
     if (close(cpu_sum, gpu_sum)) {
         std::cout << "CUDA kernel's result matches the CPU result." << std::endl;
     } else {
