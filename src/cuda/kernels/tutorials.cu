@@ -1,4 +1,6 @@
-#include "kernels.h"
+#include <cuda_runtime.h>
+
+#define CHANNELS 3
 
 __global__ void saxpy_grid_strided(float a, float* b, float* c, int N) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;

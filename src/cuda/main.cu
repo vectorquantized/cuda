@@ -1,9 +1,9 @@
 #include <iostream>
 #include <iomanip>
-#include "kernels.h"
 #include <cxxopts.hpp>
 #include <unordered_map>
 #include <functional>
+#include "cuda/kernels.h"
 
 // For simplicity we'll create a str -> function map and invoke the function.
 std::unordered_map<std::string, std::function<void(void)>> function_map =  {
@@ -18,6 +18,9 @@ std::unordered_map<std::string, std::function<void(void)>> function_map =  {
     },
     {
         "softmax", []() { softmax_kernels::launch(); }
+    },
+    {
+        "add", []() { reduction_kernels::launch("add"); }
     },
 };
 

@@ -23,13 +23,13 @@ include_directories(
 # Find OpenCV package
 find_package(OpenCV REQUIRED)
 
-# fetch latest argparse
+# fetch latest cxxopts
 include(FetchContent)
 FetchContent_Declare(
-    argparse
-    GIT_REPOSITORY https://github.com/p-ranav/argparse.git
+    cxxopts
+    GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git
 )
-FetchContent_MakeAvailable(argparse)
+FetchContent_MakeAvailable(cxxopts)
 
 
 # Include OpenCV headers
@@ -37,16 +37,17 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 
 # Add source files
 file(GLOB CUDA_SOURCES ${PROJECT_SOURCE_DIR}/src/cuda/*.cu)
+file(GLOB CUDA_KERNEL_SOURCES ${PROJECT_SOURCE_DIR}/src/cuda/kernels/*.cu)
 file(GLOB CPP_SOURCES ${PROJECT_SOURCE_DIR}/src/csrc/*.cpp)
 file(GLOB CPU_SOURCES ${PROJECT_SOURCE_DIR}/src/cpu/*.cpp)
 
 # Create executable
-cuda_add_executable(CudaProgramming ${CUDA_SOURCES} ${CPP_SOURCES} ${CPU_SOURCES})
+cuda_add_executable(CudaProgramming ${CUDA_SOURCES} ${CUDA_KERNEL_SOURCES} ${CPP_SOURCES} ${CPU_SOURCES})
 
 # cuda_add_library(cuda_kernels ${CUDA_SOURCES})
 # add_executable(CudaProgramming ${CPP_SOURCES} ${CUDA_SOURCES} ${CPU_SOURCES})
 
-target_link_libraries(CudaProgramming ${OpenCV_LIBS})
+target_link_libraries(CudaProgramming ${OpenCV_LIBS} cxxopts)
 #  cuda_kernels ${CUDA_LIBRARIES})
 
 
