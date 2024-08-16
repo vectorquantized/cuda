@@ -89,15 +89,17 @@ __global__ void gemm_cuda_reg_tiled(const float* __restrict__ a, const float* __
         // Load data into shared memory
         for(int i = 0; i < REGISTER_TILE_WIDTH; ++i) {
             for(int j = 0; j < REGISTER_TILE_WIDTH; ++j) {
+                // g_row and g_col is the row and column index of the global
+                // memory
                 int g_row = row + i * TILE_WIDTH / REGISTER_TILE_WIDTH;
                 int g_col = col + j * TILE_WIDTH / REGISTER_TILE_WIDTH;
 
+                // this is very similar to the shared memory tiled version
                 if (g_row < M && (ph * TILE_WIDTH + tx) < K) {
                     a_smem[ty + i * TILE_WIDTH / REGISTER_TILE_WIDTH][tx] = a[g_row * K + ph * TILE_WIDTH + tx];
                 } else {
                     a_smem[ty + i * TILE_WIDTH / REGISTER_TILE_WIDTH][tx] = 0.0f;
                 }
-
                 if ((ph * TILE_WIDTH + ty) < K && g_col < N) {
                     b_smem[ty][tx + j * TILE_WIDTH / REGISTER_TILE_WIDTH] = b[(ph * TILE_WIDTH + ty) * N + g_col];
                 } else {
@@ -105,10 +107,11 @@ __global__ void gemm_cuda_reg_tiled(const float* __restrict__ a, const float* __
                 }
             }
         }
-
+        // barrier sync.
         __syncthreads();
 
         // Perform the multiplication
+        // by transferring elements to the resgister memory
         for(int k = 0; k < TILE_WIDTH; ++k) {
             for(int i = 0; i < REGISTER_TILE_WIDTH; ++i) {
                 a_reg[i] = a_smem[ty + i * TILE_WIDTH / REGISTER_TILE_WIDTH][k];
@@ -116,14 +119,15 @@ __global__ void gemm_cuda_reg_tiled(const float* __restrict__ a, const float* __
             for(int i = 0; i < REGISTER_TILE_WIDTH; ++i) {
                 b_reg[i] = b_smem[k][tx + i * TILE_WIDTH / REGISTER_TILE_WIDTH];
             }
-
+           // sum gets updated for the whole tile for each phase.
+           // and then we repeat it for all the phases.
             for(int i = 0; i < REGISTER_TILE_WIDTH; ++i) {
                 for(int j = 0; j < REGISTER_TILE_WIDTH; ++j) {
                     sum_reg[i][j] += a_reg[i] * b_reg[j];
                 }
             }
         }
-
+        // barrier sync
         __syncthreads();
     }
 
