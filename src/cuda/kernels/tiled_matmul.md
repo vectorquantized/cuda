@@ -1,6 +1,6 @@
 # Tiled Matrix Multiplication
 
-Tiled matrix multiplication is an efficient approach that reduces memory traffic and provides contiguous access through thread coalescing. The key concept involves reading data once from high-bandwidth memory (HBM) into shared memory, where it is reused for multiple operations, significantly improving overall performance. Here’s how it works:
+Tiled matrix multiplication is an efficient approach that reduces memory traffic and provides contiguous access through thread coalescing. The key concept involves reading data once from high-bandwidth memory (HBM) into shared memory, where it is reused for multiple operations, significantly improving overall performance. Here are my notes:
 
 1. **Reuse of Shared Memory for Multiple Operations:**
     - Instead of having each output thread individually read the row and column needed for its calculation, threads in a block cooperate to load a **tile** of the matrices into shared memory. This tile is then reused across multiple operations, significantly reducing redundant memory accesses.
