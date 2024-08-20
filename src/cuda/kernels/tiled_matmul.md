@@ -3,7 +3,7 @@
 Tiled matrix multiplication is an efficient approach that reduces memory traffic and provides contiguous access through thread coalescing. The key concept involves reading data once from high-bandwidth memory (HBM) into shared memory, where it is reused for multiple operations, significantly improving overall performance. Here are my notes:
 
 1. **Reuse of Shared Memory for Multiple Operations:**
-    - Instead of having each output thread individually read the row and column needed for its calculation, threads in a block cooperate to load a **tile** of the matrices into shared memory. This tile is then reused across multiple operations, significantly reducing redundant memory accesses.
+    - Instead of having each output thread individually read the row and column needed for its calculation, threads in a block cooperate to load a **tile** of the matrices into shared memory. This tile is then reused across multiple operations, significantly reducing redundant memory accesses. The re-use in the example below happens while calculating the values of P10 and P11, we reuse m10 and m11 (they were loaded once) and threads within this block (1,1) end up re-using the values already read from HBM.
   
 2. **Efficient Use of Bandwidth:**
     - By loading data into shared memory once per tile and reusing it, the kernel reduces the number of global memory accesses. Shared memory provides much faster access than global memory, making the computation more bandwidth-efficient.
