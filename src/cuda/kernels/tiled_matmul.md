@@ -25,8 +25,6 @@ Tiled matrix multiplication is an efficient approach that reduces memory traffic
 3. **Final Write:**
     - Once all phases are completed, the final result is written back to global memory.
 
-This approach ensures that data is read once and reused efficiently across multiple operations, leading to significant performance gains.
-
 ![Tiled Matrix Multiplication](tiled_matmul.png)
 
 <p align="center"><em>Toy example of tiled matmul showing the computation performed for the last output block</em></p>
