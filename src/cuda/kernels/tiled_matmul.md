@@ -31,3 +31,8 @@ Tiled matrix multiplication is an efficient approach that reduces memory traffic
 
 
 
+<img src="matmul_tiled_odd_dims.png" alt="Tiled Matrix Multiplication" style="zoom:200%;" />
+
+
+
+<p align="center"><em>Toy example of tiled matmul showing the computation performed for the slice [2:4, 2:4] in the output matrix</em></p>
