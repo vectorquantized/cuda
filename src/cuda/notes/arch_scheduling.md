@@ -1,9 +1,5 @@
 # Compute Architecture and Scheduling
 
-![Architecture of CUDA Capable GPU](high_level_architecture.png)
-
-<p align="center"><em>Picture taken form Programming Massively Parallel Processors</em></p>
-
 * Each CUDA-capable GPU is organized into an array of highly-threaded Streaming Multiprocessors (SMs).
 * Each SM contains multiple processing units called streaming processors (or CUDA cores) that share control logic and memory.
 * Global memory is the High Bandwidth Memory (HBM).
