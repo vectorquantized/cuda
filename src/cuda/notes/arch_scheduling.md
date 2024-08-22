@@ -24,3 +24,9 @@ In CUDA, if `__syncthreads()` is used, it must be reached by all threads within 
 To prevent long wait times for some threads, all threads in a block should execute in close proximity to each other. CUDA ensures that the necessary resources are allocated to all threads required to reach the synchronization point by treating the block as a unit when assigning execution resources. All threads in a block are scheduled on the same SM simultaneously, and a block begins execution only when the runtime secures the resources needed by all its threads.
 
 Blocks can execute in any order relative to each other, as barrier synchronization is not allowed between threads in different blocks.
+
+---
+## References
+**Chapter 5 (Memory architecture and data locality):** 
+*Programming Massively Parallel Processors* 
+Wen-mei W. Hwu
