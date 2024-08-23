@@ -2,6 +2,7 @@
 #define GEMM_H
 
 #define TILE_WIDTH 16
+#define REGISTER_TILE_WIDTH 16
 
 #include <cuda_runtime.h>
 
