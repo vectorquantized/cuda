@@ -15,5 +15,5 @@ Learning to write CUDA kernels.
   ```
    ./CudaProgramming -n conv2d
   ```
-  
+* There's also a sample gemm.ipynb file that uses the same code used by the gemm kernel but in a jupyter notebook. It is pretty handy to verify kernel implementation when in a hurry or you don't have access to local GPU.
   
