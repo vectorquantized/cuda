@@ -19,7 +19,7 @@ __global__ void add(float* input, float* output, int size) {
     } else {
         s_data[t_idx] = 0.0f;
     }
-    __syncthreads(); // barrier sync, we wait for all the data to be loaded in the SMEM.
+    // __syncthreads(); // barrier sync, we wait for all the data to be loaded in the SMEM.
 
     // this way of using strides has less thread divergence on average.
     // in the first timestep, we add thread 0 with thread blockDim.x / 2
@@ -29,11 +29,11 @@ __global__ void add(float* input, float* output, int size) {
     // Having said that, the moment stride value falls below the warp size we
     // start seeing divergence. To tackle that we could add a separate version
     // of the reduction kernel that is warp schedule aware.
-    for (int stride = blockDim.x / 2; stride > 0; stride /= 2) {
+    for (unsigned int stride = blockDim.x / 2; stride >= 1; stride /= 2) {
+        __syncthreads();
         if (t_idx < stride) {
             s_data[t_idx] += s_data[t_idx + stride];
         }
-        __syncthreads();
     }
     if (t_idx == 0) {
         output[blockIdx.x] = s_data[t_idx];
@@ -55,8 +55,8 @@ void add_kernel_launch(float* input, float* output, int size, int threads_per_bl
 }
 
 void launch(std::string name) {
-    int M = 8192;
-    int threads_per_block = 256;
+    int M = 16384;
+    int threads_per_block = 512;
     int blocks_per_grid = (M + (threads_per_block - 1)) / threads_per_block;
     float* output_h = new float[blocks_per_grid]();
     std::vector<float> input_vec(M);
