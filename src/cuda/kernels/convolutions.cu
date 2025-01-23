@@ -53,9 +53,9 @@ __global__ void conv2d_tiled(const float* __restrict__ matrix, float* output, in
     if (row_in >= 0 && row_in < height &&
         col_in >= 0  && col_in < width) {
             m_shared[row_shared][col_shared] = matrix[row_in * width + col_in];
-        } else {
+    } else {
             m_shared[row_shared][col_shared] = 0.0f;
-        }
+    }
     
     __syncthreads();
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(CudaProgramming)
+project(CudaProgramming CUDA CXX)
 
 # Set the CUDA toolkit path if not found automatically
 if(NOT DEFINED ENV{CUDA_TOOLKIT_ROOT_DIR})
@@ -7,10 +7,11 @@ if(NOT DEFINED ENV{CUDA_TOOLKIT_ROOT_DIR})
 endif()
 
 # Find CUDA package
-find_package(CUDA REQUIRED)
+#find_package(CUDA REQUIRED)
+
 
 # Set the C++ standard
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(${CMAKE_CXX_FLAGS} "-diag-suppress 611-D")
 
@@ -42,8 +43,8 @@ file(GLOB CPP_SOURCES ${PROJECT_SOURCE_DIR}/src/csrc/*.cpp)
 file(GLOB CPU_SOURCES ${PROJECT_SOURCE_DIR}/src/cpu/*.cpp)
 
 # Create executable
-cuda_add_executable(CudaProgramming ${CUDA_SOURCES} ${CUDA_KERNEL_SOURCES} ${CPP_SOURCES} ${CPU_SOURCES})
-
+add_executable(CudaProgramming ${CUDA_SOURCES} ${CUDA_KERNEL_SOURCES} ${CPP_SOURCES} ${CPU_SOURCES})
+set_target_properties(CudaProgramming PROPERTIES CUDA_ARCHITECTURES "80;86;89;90")
 # cuda_add_library(cuda_kernels ${CUDA_SOURCES})
 # add_executable(CudaProgramming ${CPP_SOURCES} ${CUDA_SOURCES} ${CPU_SOURCES})
 
